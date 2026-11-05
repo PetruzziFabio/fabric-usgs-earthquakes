@@ -1,0 +1,9 @@
+.alter database policy retention @'{"SoftDeletePeriod":"36500.00:00:00","Recoverability":"Disabled"}'
+.alter database policy caching hotdata = time(36500.00:00:00) hotindex = time(36500.00:00:00)
+.alter-merge database policy streamingingestion "{\"IsEnabled\":true,\"HintAllocatedRate\":null,\"NumberOfRowStores\":null,\"SealIntervalLimit\":null,\"SealThresholdBytes\":null,\"UsageTags\":[],\"IsMaintenanceActive\":false}"
+.alter database policy ingestionbatching @'{"MaximumBatchingTimeSpan":"00:00:20","MaximumNumberOfItems":500,"MaximumRawDataSizeMB":300,"Origin":0}'
+.add database  monitors (@'tridentgroup=TridentViewers_552bed02-4512-450c-858d-84cfe2b4186d_29c64da9-dc35-4578-bb58-658c74494c64;*') "Added as \'tridentgroup=TridentViewers_552bed02-4512-450c-858d-84cfe2b4186d_29c64da9-dc35-4578-bb58-658c74494c64;*\'"
+.add database  admins (@'tridentgroup=TridentAdmins_552bed02-4512-450c-858d-84cfe2b4186d_29c64da9-dc35-4578-bb58-658c74494c64;*') "Added as \'tridentgroup=TridentAdmins_552bed02-4512-450c-858d-84cfe2b4186d_29c64da9-dc35-4578-bb58-658c74494c64;*\'"
+.add database  viewers (@'tridentgroup=TridentViewers_552bed02-4512-450c-858d-84cfe2b4186d_29c64da9-dc35-4578-bb58-658c74494c64;*') "Added as \'tridentgroup=TridentViewers_552bed02-4512-450c-858d-84cfe2b4186d_29c64da9-dc35-4578-bb58-658c74494c64;*\'"
+.create-merge table Earthquakes (event_id:string, event_time:datetime, updated_time:datetime, magnitude:real, mag_type:string, place:string, latitude:real, longitude:real, depth_km:real, area:string, event_type:string, status:string, ['network']:string, significance:long, tsunami:long, ingest_time:datetime) 
+.add table Earthquakes admins (@'aaduser=80526d66-df12-4b30-a692-208d9a257db2;552bed02-4512-450c-858d-84cfe2b4186d')

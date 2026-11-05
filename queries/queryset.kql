@@ -1,0 +1,104 @@
+// Q1 – Quali terremoti di magnitudo almeno 4 risultano negli ultimi 7 giorni?
+Earthquakes
+| summarize arg_max(updated_time, *) by event_id
+| where event_time between (ago(7d) .. now())
+| where magnitude >= 4
+| extend Profondita = case(
+    depth_km < 70, "Superficiale (<70 km)",
+    depth_km < 300, "Intermedia (70-300 km)",
+    "Profonda (>=300 km)"
+)
+| project
+    event_id,
+    event_time,
+    updated_time,
+    magnitude,
+    place,
+    latitude,
+    longitude,
+    depth_km,
+    Profondita
+| order by magnitude desc, event_time desc
+
+// Q2 – Come varia il numero di terremoti ogni ora negli ultimi 7 giorni?
+let Fine = bin(now(), 1h);
+let Inizio = Fine - 7d;
+Earthquakes
+| summarize arg_max(updated_time, *) by event_id
+| where event_time >= Inizio and event_time < Fine
+| make-series
+    NumeroEventi = count() default=0
+    on event_time from Inizio to Fine step 1h
+| render timechart with (
+    title="Terremoti per ora - ultimi 7 giorni completi"
+)
+
+// Q3 – Quanti eventi per area ogni ora nelle ultime 24 ore complete,
+// e quali conteggi superano la media oraria della rispettiva area?
+let Fine = bin(now(), 1h);
+let Inizio = Fine - 24h;
+let Ore = range Ora from Inizio to (Fine - 1h) step 1h;
+let Aree = datatable(area:string)
+[
+    "americas",
+    "europe_africa",
+    "asia_pacific"
+];
+let Conteggi =
+    Earthquakes
+    | summarize arg_max(updated_time, *) by event_id
+    | where event_time >= Inizio and event_time < Fine
+    | summarize NumeroEventi = count() by area, Ora = bin(event_time, 1h);
+let ConteggiCompleti =
+    Aree
+    | extend Chiave = 1
+    | join kind=inner (Ore | extend Chiave = 1) on Chiave
+    | project area, Ora
+    | join kind=leftouter Conteggi on area, Ora
+    | project area, Ora, NumeroEventi = coalesce(NumeroEventi, tolong(0));
+let Medie =
+    ConteggiCompleti
+    | summarize MediaOraria = avg(todouble(NumeroEventi)) by area;
+ConteggiCompleti
+| join kind=inner Medie on area
+| extend
+    SopraMedia = NumeroEventi > MediaOraria,
+    Scostamento = round(NumeroEventi - MediaOraria, 2)
+| project
+    Ora,
+    area,
+    NumeroEventi,
+    MediaOraria = round(MediaOraria, 2),
+    SopraMedia,
+    Scostamento
+| order by Ora desc, area asc
+
+// Q4 – Come si distribuiscono i terremoti per fascia di magnitudo negli ultimi 7 giorni?
+Earthquakes
+| summarize arg_max(updated_time, *) by event_id
+| where event_time between (ago(7d) .. now())
+| where isnotnull(magnitude)
+| extend FasciaMagnitudo = case(
+    magnitude < 2, "< 2",
+    magnitude < 3, "2 - <3",
+    magnitude < 4, "3 - <4",
+    magnitude < 5, "4 - <5",
+    magnitude < 6, "5 - <6",
+    ">= 6"
+)
+| extend Ordine = case(
+    magnitude < 2, 1,
+    magnitude < 3, 2,
+    magnitude < 4, 3,
+    magnitude < 5, 4,
+    magnitude < 6, 5,
+    6
+)
+| summarize NumeroEventi = count() by Ordine, FasciaMagnitudo
+| order by Ordine asc
+| project FasciaMagnitudo, NumeroEventi
+| render columnchart with (
+    title="Distribuzione dei terremoti per magnitudo - ultimi 7 giorni",
+    xtitle="Fascia di magnitudo",
+    ytitle="Numero di eventi"
+)

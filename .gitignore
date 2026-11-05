@@ -1,0 +1,30 @@
+# Credenziali e configurazioni locali
+.env
+.env.*
+!.env.example
+
+# Ambienti virtuali Python
+.venv/
+venv/
+env/
+
+# File Python generati
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Checkpoint dei notebook
+.ipynb_checkpoints/
+
+# Configurazioni locali degli editor
+.vscode/
+.idea/
+
+# File del sistema operativo
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Log e file temporanei
+*.log
+*.tmp
